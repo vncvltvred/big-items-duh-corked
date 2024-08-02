@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "package": "de.siphalor.bigitemsduh.client_mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [],
+  "client": [
+    "screen.invoker.HandledScreenInvoker",
+    "screen.MixinHandledScreen",
+    "compat.emi.screen.MixinRecipeScreen",
+    "compat.emi.emi_loot.accessor.IconGroupEmiWidgetAccessor",
+    "compat.toms_storage.screen.MixinAbstractStorageTerminalScreen",
+    "network.MixinClientPlayNetworkHandler"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -6,8 +6,8 @@ plugins {
 	id 'com.github.breadmoirai.github-release' version '2.2.12'
 }
 
-sourceCompatibility = JavaVersion.VERSION_16
-targetCompatibility = JavaVersion.VERSION_16
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 archivesBaseName = project.archives_base_name
 version = "${project.mod_version}+mc${project.minecraft_version}"
@@ -18,42 +18,69 @@ loom {}
 repositories {
 	maven { url "https://maven.siphalor.de" }
 	maven { url "https://maven.shedaniel.me" }
-	maven { url "https://maven.terraformersmc.com/releases" }
 	maven { url "https://jitpack.io" }
+	maven {
+		name = "TerraformersMC"
+		url = "https://maven.terraformersmc.com/releases"
+	}
+	exclusiveContent {
+		forRepository {
+			maven {
+				url "https://cursemaven.com"
+			}
+		}
+		filter {
+			includeGroup "curse.maven"
+		}
+	}
 }
 
 dependencies {
-	//to change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	modImplementation(include("de.siphalor:amecsapi-$minecraft_major_version:$amecsapi_version")) {
+	modImplementation(include("de.siphalor:amecsapi-${minecraft_major_version}:${amecsapi_version}")) {
 		exclude module: "nmuk-1.19"
 	}
 
+	// Required
+	modApi("me.shedaniel.cloth:cloth-config-fabric:${clothconfig_version}") {
+		exclude(group: "net.fabricmc.fabric-api")
+	}
+	modApi("com.terraformersmc:modmenu:${modmenu_version}")
 
-	include(modApi(platform("de.siphalor.tweed4:tweed4-bom-$minecraft_major_version:$tweed_version")))
-	def tweed_deps = [
-			"base", "annotated",
-			"data", "data-hjson",
-			"tailor-screen", "tailor-coat",
-	]
-	tweed_deps.forEach { include(modApi("de.siphalor.tweed4:tweed4-$it-$minecraft_major_version")) }
-	include(modApi("de.siphalor:coat-$minecraft_major_version:$coat_version"))
+//	modImplementation(include(fabricApi.module("fabric-key-binding-api-v1", project.fabric_api_version)))
+//	modImplementation(include(fabricApi.module("fabric-registry-sync-v0", project.fabric_api_version)))
+//	modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:${fabric_api_version}")
+	modImplementation("net.fabricmc.fabric-api:fabric-api:${fabric_api_version}")
 
-	modImplementation(include(fabricApi.module("fabric-key-binding-api-v1", project.fabric_api_version)))
-	modImplementation(include(fabricApi.module("fabric-registry-sync-v0", project.fabric_api_version)))
-	modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:$fabric_api_version")
+	// EMi Compat
+	modCompileOnly "dev.emi:emi-fabric:${emi_version}"
+	modLocalRuntime "dev.emi:emi-fabric:${emi_version}"
 
-	modCompileOnly "me.shedaniel:RoughlyEnoughItems-api-fabric:$rei_version"
-	modRuntimeOnly("me.shedaniel:RoughlyEnoughItems-fabric:$rei_version") {
+	// EMIffect Compat
+	modCompileOnly "curse.maven:emiffect-735528:${emiffect_fileid}"
+
+	// EMI Loot Compat
+	modCompileOnly "curse.maven:emi_loot-681783:${emi_loot_fileid}"
+
+	// EMI Trades Compat
+	modCompileOnly "curse.maven:emi-trades-villager-trading-emi-plugin-735523:${emi_trades_fileid}"
+
+	// Tom's Simple Storage Mod Compat
+	modCompileOnly "curse.maven:toms_storage-396826:${toms_storage_fileid}"
+
+	// Bumblezone Compat
+	modCompileOnly "curse.maven:bumblezone-363949:${bumblezone_fileid}"
+
+	// REi Compat
+	modCompileOnly "me.shedaniel:RoughlyEnoughItems-api-fabric:${rei_version}"
+	modRuntimeOnly("me.shedaniel:RoughlyEnoughItems-fabric:${rei_version}") {
 		exclude group: "net.fabricmc.fabric-api"
 	}
-	modRuntimeOnly("com.terraformersmc:modmenu:$modmenu_version")
 }
 
-// Workaround for https://github.com/gradle/gradle/issues/10195
 configurations.include.transitive = true
 configurations.include.dependencies.each {
 	if (!it.name.contains("bom")) {
@@ -72,17 +99,13 @@ processResources {
 		}
 	}
 }
-// ensure that the encoding is set to UTF-8, no matter what the system default is
-// this fixes some edge cases with special characters not displaying correctly
-// see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-tasks.withType(JavaCompile) {
-	options.encoding = "UTF-8"
+
+tasks.withType(JavaCompile).configureEach {
+	it.getOptions().setEncoding("UTF-8")
 }
 
-// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-// if it is present.
-// If you remove this task, sources will not be generated.
-task sourcesJar(type: Jar, dependsOn: classes) {
+tasks.register('sourcesJar', Jar) {
+	dependsOn classes
 	archiveClassifier.set("sources")
 	from sourceSets.main.allSource
 }
@@ -90,91 +113,3 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 jar {
 	from "LICENSE"
 }
-
-// configure the maven publication
-publishing {
-	publications {
-		mavenJava(MavenPublication) {
-			artifactId = "${project.archives_base_name}-${project.minecraft_major_version}"
-
-			from components.java
-			java.withSourcesJar()
-		}
-	}
-	repositories {
-		if (project.hasProperty("siphalorMavenUser")) {
-			maven {
-				name = "Siphalor"
-				url = "https://maven.siphalor.de/upload.php"
-				credentials {
-					username = siphalorMavenUser
-					password = siphalorMavenPassword
-				}
-			}
-		}
-	}
-}
-
-// Mod sites
-
-static def getChangelog() {
-	return 'git log -1 --format=format:##%x20%s%n%n%b%nRelease%x20by%x20%an --grep Version'.execute().text.trim()
-}
-
-task uploadToModSites {
-	dependsOn build
-	group = "upload"
-}
-
-if (project.hasProperty("curseforgeToken")) {
-	curseforge {
-		apiKey project.curseforgeToken
-		project {
-			id = "444972"
-			releaseType = project.mod_release
-			changelogType = "markdown"
-			changelog = project.getChangelog()
-			for (version in ((String) project.mod_mc_versions).split(";")) {
-				addGameVersion(version)
-			}
-			addGameVersion("Fabric")
-			relations {
-				embeddedLibrary "amecs"
-			}
-			mainArtifact(remapJar) {
-				displayName = "[${project.mod_mc_version_specifier}] ${project.mod_version}"
-			}
-		}
-	}
-	uploadToModSites.finalizedBy(tasks.curseforge)
-}
-
-modrinth {
-	if (project.hasProperty("modrinthToken")) {
-		token = project.modrinthToken
-		uploadToModSites.finalizedBy(tasks.modrinth)
-	}
-
-	projectId = "W3k8Z0Vz"
-	versionName = "[$project.mod_mc_version_specifier] $project.mod_version"
-	versionType = project.mod_release
-	changelog = project.getChangelog()
-	uploadFile = remapJar
-	gameVersions = project.mod_mc_versions.split(";") as List<String>
-	loaders = ["fabric"]
-}
-tasks.modrinth.group = "upload"
-
-if (project.hasProperty("githubToken")) {
-	githubRelease {
-		token project.githubToken
-		targetCommitish = "main" // project.minecraft_major_version
-		releaseName = "Version $project.mod_version for $project.mod_mc_version_specifier"
-		body = project.getChangelog()
-		releaseAssets remapJar.getArchiveFile()
-		prerelease = mod_release != "release"
-		overwrite = true
-	}
-	uploadToModSites.finalizedBy(tasks.githubRelease)
-}
-tasks.githubRelease.group = "upload"

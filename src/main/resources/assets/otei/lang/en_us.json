@@ -1,0 +1,23 @@
+{
+	"key.categories.otei": "Obviously They're Enlarged Items!",
+	"key.otei.hold_item_enlargement": "Hold to Enlarge Item",
+	"key.otei.toggle_item_enlargement": "Toggle Item Enlargement",
+	"text.autoconfig.otei.title": "Obviously They're Enlarged Items!",
+	"text.autoconfig.otei.option.xTranspose": "X Transpose",
+	"text.autoconfig.otei.option.yTranspose": "Y Transpose",
+	"text.autoconfig.otei.option.itemScale": "Item Scale",
+	"text.autoconfig.otei.option.shouldDrawBarsOnItems": "Should Draw Bars on Items",
+	"text.autoconfig.otei.option.shouldEnlargeDraggedItems": "Should Enlarge Dragged Items",
+	"text.autoconfig.otei.option.emiDependent": "Config Options Dependent on EMi, and its addons",
+	"text.autoconfig.otei.option.emiDependent.xTransposeRecipeScreen": "X Transpose for EMi Recipe Screen",
+	"text.autoconfig.otei.option.emiDependent.yTransposeRecipeScreen": "Y Transpose for EMi Recipe Screen",
+	"text.autoconfig.otei.option.emiDependent.disableRecipeScreenMixin": "Disable Enlarged Item for EMi Recipe Screen",
+	"text.autoconfig.otei.option.emiDependent.shouldRenderEffectSprite": "Should Render Effect Sprite",
+	"text.autoconfig.otei.option.emiDependent.shouldTransposeEMIPanelItemsToRSTranspose": "Should Transpose EMi Panel Items in Recipe Screen to Recipe Screen Transpose",
+	"text.autoconfig.otei.option.emiDependent.shouldRenderEntitiesModel": "Should Render Entities Model",
+	"text.autoconfig.otei.option.emiDependent.shouldCycleThroughListsAndTags": "Should Cycle Through Lists and Tags",
+	"text.autoconfig.otei.option.emiDependent.adjustItemSwitchTime": "Adjust Item Switch Time",
+	"text.autoconfig.otei.option.emiDependent.defaultEntityScale": "Default Entity Scale",
+	"text.autoconfig.otei.option.emiDependent.autoPopulateMapsWithEntities": "Automagically Populate Entity Maps with Entity Types",
+	"text.autoconfig.otei.option.emiDependent.printEntityTypes": "Print Entity Types to Console on World Join"
+}
