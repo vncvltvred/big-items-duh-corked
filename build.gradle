@@ -6,12 +6,12 @@ plugins {
 	id 'com.github.breadmoirai.github-release' version '2.2.12'
 }
 
-sourceCompatibility = JavaVersion.VERSION_17
-targetCompatibility = JavaVersion.VERSION_17
-
-archivesBaseName = project.archives_base_name
 version = "${project.mod_version}+mc${project.minecraft_version}"
 group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
 
 loom {}
 
@@ -81,35 +81,27 @@ dependencies {
 	}
 }
 
-configurations.include.transitive = true
-configurations.include.dependencies.each {
-	if (!it.name.contains("bom")) {
-		it.transitive = false
-	}
-}
-
 processResources {
-	inputs.property "version", version
+	inputs.property "version", project.version
 
-	afterEvaluate {
-		from(sourceSets.main.resources.srcDirs) {
-			include "fabric.mod.json"
-			expand "version": version
-			duplicatesStrategy DuplicatesStrategy.INCLUDE
-		}
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version
 	}
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.getOptions().setEncoding("UTF-8")
+	it.options.release = 17
 }
 
-tasks.register('sourcesJar', Jar) {
-	dependsOn classes
-	archiveClassifier.set("sources")
-	from sourceSets.main.allSource
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
 }
 
 jar {
-	from "LICENSE"
+	from("LICENSE") {
+		rename { "${it}_${project.base.archivesName.get()}"}
+	}
 }
