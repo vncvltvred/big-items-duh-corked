@@ -82,7 +82,7 @@ public class OTEI implements ModInitializer
 	public static void setEnabled(boolean enabled) { OTEI.enabled = enabled; }
 
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public static boolean shouldItemRender() { return enabled || ENLARGE_HOLD_KEY_BINDING.isPressed(); }
+    	public static boolean shouldItemRender() { return enabled || ENLARGE_HOLD_KEY_BINDING.isPressed(); }
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public static boolean hasREI() { return FabricLoader.getInstance().isModLoaded("roughlyenoughitems"); }
 	public static boolean hasEMI() { return FabricLoader.getInstance().isModLoaded("emi"); }
