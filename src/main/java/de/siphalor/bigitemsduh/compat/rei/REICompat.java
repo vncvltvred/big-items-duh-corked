@@ -62,8 +62,8 @@ public class REICompat
 
 		EntryStack<?> focusedStack = overlay.get().getEntryList().getFocusedStack();
 
-        return focusedStack != null && !focusedStack.isEmpty();
-    }
+        	return focusedStack != null && !focusedStack.isEmpty();
+   	}
 
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public static boolean isFocusedEntryFluidStack()
