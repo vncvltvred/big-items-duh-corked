@@ -19,12 +19,12 @@
 	"environment": "client",
 	"entrypoints": {
 		"main": [
-          "de.siphalor.bigitemsduh.OTEI"
+          	  "de.siphalor.bigitemsduh.OTEI"
 		],
 		"client": [],
 		"server": [],
 		"modmenu": [
-          "de.siphalor.bigitemsduh.compat.modmenu.ModMenuCompat"
+          	  "de.siphalor.bigitemsduh.compat.modmenu.ModMenuCompat"
 		]
 	},
 	"mixins": [
