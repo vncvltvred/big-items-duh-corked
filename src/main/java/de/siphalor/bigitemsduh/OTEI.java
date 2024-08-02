@@ -64,8 +64,8 @@ public class OTEI implements ModInitializer
 
 	public static void logInfo(String message)
 	{
-        LOGGER.info("[{}] {}", MOD_NAME, message);
-    }
+        	LOGGER.info("[{}] {}", MOD_NAME, message);
+    	}
 
 	public static void logInfo(Object message1, String message2)
 	{
