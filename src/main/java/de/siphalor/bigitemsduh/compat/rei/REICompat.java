@@ -24,7 +24,7 @@
 
 package de.siphalor.bigitemsduh.compat.rei;
 
-import de.siphalor.bigitemsduh.OTEI;
+import de.siphalor.bigitemsduh.OTEIClient;
 import dev.architectury.fluid.FluidStack;
 import me.shedaniel.math.Rectangle;
 import me.shedaniel.rei.api.client.REIRuntime;
@@ -37,9 +37,9 @@ import java.util.Optional;
 
 public class REICompat
 {
-	public static void drawFluidStack(DrawContext drawContext)
+	public static void drawFluidStackIfHovered(DrawContext drawContext)
 	{
-		if(!OTEI.hasREI() || !isEntryFocused() || !isFocusedEntryFluidStack()) return;
+		if(!OTEIClient.getCompatChecker().hasREI() || !isEntryFocused() || !isFocusedEntryFluidStack()) return;
 
 		EntryStack<?> focusedEntry = getFocusedEntry();
 
@@ -50,7 +50,7 @@ public class REICompat
 
 	public static boolean isEntryFocused()
 	{
-		if(!OTEI.hasREI()) return false;
+		if(!OTEIClient.getCompatChecker().hasREI()) return false;
 
 		REIRuntime reiRuntime = REIRuntime.getInstance();
 
@@ -62,13 +62,13 @@ public class REICompat
 
 		EntryStack<?> focusedStack = overlay.get().getEntryList().getFocusedStack();
 
-        	return focusedStack != null && !focusedStack.isEmpty();
+		return focusedStack != null && !focusedStack.isEmpty();
    	}
 
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public static boolean isFocusedEntryFluidStack()
 	{
-		if(!OTEI.hasREI() || REIRuntime.getInstance().getOverlay().isEmpty() || getFocusedEntry() == null) return false;
+		if(!OTEIClient.getCompatChecker().hasREI() || REIRuntime.getInstance().getOverlay().isEmpty() || getFocusedEntry() == null) return false;
 
 		return getFocusedEntry().getValue() instanceof FluidStack;
 	}
@@ -82,7 +82,7 @@ public class REICompat
 
 	public static ItemStack getFocusedEntryAsItemStack()
 	{
-		if(REIRuntime.getInstance().getOverlay().isEmpty() || getFocusedEntry() == null) return null;
+		if(REIRuntime.getInstance().getOverlay().isEmpty() || getFocusedEntry() == null) return ItemStack.EMPTY;
 
 		return (ItemStack) getFocusedEntry().getValue();
 	}

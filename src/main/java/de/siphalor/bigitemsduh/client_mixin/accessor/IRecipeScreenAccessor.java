@@ -25,18 +25,17 @@
     For more information, please refer to <https://unlicense.org>
 */
 
-package de.siphalor.bigitemsduh.compat.emi.plugin.emiffect;
+package de.siphalor.bigitemsduh.client_mixin.accessor;
 
-import de.siphalor.bigitemsduh.OTEI;
-import dev.emi.emi.api.stack.EmiIngredient;
-import io.github.prismwork.emiffect.util.stack.StatusEffectEmiStack;
+import dev.emi.emi.api.widget.Widget;
+import dev.emi.emi.screen.RecipeScreen;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-public class EMIffectCompat
+@Mixin(RecipeScreen.class)
+public interface IRecipeScreenAccessor
 {
-    public static boolean isStatusEffect(EmiIngredient stack)
-    {
-        if(!OTEI.hasEMIffect()) return false;
+    @Accessor(value = "x", remap = false) int otei$getX();
 
-        return stack instanceof StatusEffectEmiStack;
-    }
+    @Accessor(value = "hoveredWidget", remap = false) Widget otei$getHoveredWidget();
 }

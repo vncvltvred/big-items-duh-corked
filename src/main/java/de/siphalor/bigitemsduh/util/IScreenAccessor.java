@@ -25,26 +25,23 @@
     For more information, please refer to <https://unlicense.org>
 */
 
-package de.siphalor.bigitemsduh.compat.bumblezone;
+package de.siphalor.bigitemsduh.util;
 
-import com.telepathicgrunt.the_bumblezone.items.SentryWatcherSpawnEgg;
-import de.siphalor.bigitemsduh.OTEIClient;
-import net.minecraft.entity.EntityType;
-import net.minecraft.item.Item;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.item.ItemStack;
 
-public class BumblezoneCompat
+public interface IScreenAccessor
 {
-    public static EntityType<?> handleSentryWatcherSpawnEgg(Item item)
-    {
-        SentryWatcherSpawnEgg egg = (SentryWatcherSpawnEgg) item;
+    int otei$getMouseX();
+    int otei$getMouseY();
+    int otei$getScreenX();
+    int otei$getScreenHeight();
+    int otei$getItemX();
+    int otei$getItemY();
 
-        return egg.getType(item.getDefaultStack().getNbt());
-    }
+    float otei$getScale();
 
-    public static boolean isSentryWatcherSpawnEgg(Item item)
-    {
-        if(!OTEIClient.getCompatChecker().hasBumblezone()) return false;
+    ItemStack otei$getStack();
 
-        return item instanceof SentryWatcherSpawnEgg;
-    }
+    DrawContext otei$getContext();
 }

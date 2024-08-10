@@ -25,18 +25,27 @@
     For more information, please refer to <https://unlicense.org>
 */
 
-package de.siphalor.bigitemsduh.client_mixin.compat.emi.emi_loot.accessor;
+package de.siphalor.bigitemsduh.compat.toms_storage;
 
-import dev.emi.emi.api.widget.SlotWidget;
-import fzzyhmstrs.emi_loot.util.IconGroupEmiWidget;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import com.tom.storagemod.gui.CraftingTerminalScreen;
+import com.tom.storagemod.gui.StorageTerminalScreen;
+import de.siphalor.bigitemsduh.OTEIClient;
+import de.siphalor.bigitemsduh.client_mixin.invoker.IAbstractStorageTerminalScreenInvoker;
+import net.minecraft.client.gui.screen.Screen;
 
-import java.util.List;
-
-@Mixin(IconGroupEmiWidget.class)
-public interface IconGroupEmiWidgetAccessor
+public class TomsStorageCompat
 {
-    @Accessor(value = "items", remap = false)
-    List<SlotWidget> getItems();
+    public static boolean isStorageTerminalScreen(Screen screen)
+    {
+        if(!OTEIClient.getCompatChecker().hasTomsStorage()) return false;
+
+        return (screen instanceof StorageTerminalScreen || screen instanceof CraftingTerminalScreen);
+    }
+
+    public static boolean isHoveringOverItemInTerminalScreen(Screen screen)
+    {
+        if(!OTEIClient.getCompatChecker().hasTomsStorage()) return false;
+
+        return ((IAbstractStorageTerminalScreenInvoker)screen).otei$invokeGetSlotUnderMouse() != null && !((IAbstractStorageTerminalScreenInvoker)screen).otei$invokeGetSlotUnderMouse().getStack().isEmpty();
+    }
 }

@@ -27,64 +27,53 @@
 
 package de.siphalor.bigitemsduh.compat.emi;
 
-import de.siphalor.bigitemsduh.OTEI;
 import de.siphalor.bigitemsduh.compat.bumblezone.BumblezoneCompat;
-import de.siphalor.bigitemsduh.compat.emi.plugin.emi_loot.EMILootCompat;
-import de.siphalor.bigitemsduh.compat.emi.plugin.emiffect.EMIffectCompat;
+import de.siphalor.bigitemsduh.compat.emi.plugin.EMILootCompat;
+import de.siphalor.bigitemsduh.compat.emi.plugin.EMIffectCompat;
 import de.siphalor.bigitemsduh.config.OTEIConfig;
 import de.siphalor.bigitemsduh.util.EnlargedObjectDrawer;
+import de.siphalor.bigitemsduh.util.IScreenAccessor;
 import dev.emi.emi.api.stack.*;
+import dev.emi.emi.platform.EmiAgnos;
 import dev.emi.emi.runtime.EmiDrawContext;
 import dev.emi.emi.runtime.EmiFavorite;
 import dev.emi.emi.screen.EmiScreenManager;
-import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 import java.util.List;
 
+@SuppressWarnings("UnstableApiUsage")
 public class EMICompat
 {
-    public static boolean drawFocusedEMIStack(DrawContext drawContext, int screenX, int height, int mouseX, int mouseY, Screen screen)
+    private static Item currentHoveredItem;
+
+    public static boolean drawFocusedEMIStack(Screen screen)
     {
         if(EmiScreenManager.isDisabled()) return false;
 
-        EmiDrawContext context = EmiDrawContext.wrap(drawContext);
-        EmiIngredient currentHoveredItem = EmiScreenManager.getHoveredStack(mouseX, mouseY, false).getStack();
+        EmiDrawContext context = EmiDrawContext.wrap(((IScreenAccessor)screen).otei$getContext());
+        EmiIngredient currentHoveredStack = EmiScreenManager.getHoveredStack(((IScreenAccessor)screen).otei$getMouseX(), ((IScreenAccessor)screen).otei$getMouseY(), false).getStack();
 
-        float size = Math.min(screenX * OTEIConfig.getConfigEntries().itemScale, height * OTEIConfig.getConfigEntries().itemScale);
-        float scale = size / 16;
+        if(currentHoveredStack.isEmpty()) return false;
 
-        double x = (screenX - size) / 2F;
-        double y = (height - size) / 2F;
+        if(EnlargedObjectDrawer.isSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem())) currentHoveredItem = getItemStackFromEMIIngredient(currentHoveredStack).getItem();
 
-        if(currentHoveredItem.isEmpty()) return false;
-
-        if(OTEIConfig.getEmiDependent().shouldRenderEntitiesModel)
+        if(OTEIConfig.getEmiDependent().shouldDrawEntitiesModel && (EnlargedObjectDrawer.isSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem())))
         {
-            if(EnlargedObjectDrawer.isSpawnEgg(getItemStackFromEMIIngredient(currentHoveredItem)))
-            {
-                EMILootCompat.drawEmiIngredientAsEntity(context.raw(), drawContext, getItemStackFromEMIIngredient(currentHoveredItem), screen, mouseX, mouseY, screenX, height, (int)x, (int)y, scale, false, false, true);
-                return true;
-            }
-            else if(OTEI.hasBumblezone())
-            {
-                if (BumblezoneCompat.isSentryWatcherSpawnEgg(getItemStackFromEMIIngredient(currentHoveredItem).getItem()))
-                {
-                    EMILootCompat.drawEmiIngredientAsEntity(context.raw(), drawContext, getItemStackFromEMIIngredient(currentHoveredItem), screen, mouseX, mouseY, screenX, height, (int)x, (int)y, scale, false, false, true);
-                    return true;
-                }
-            }
+            EMILootCompat.drawEmiIngredientAsEntity(screen, false, false, true);
+            return true;
         }
 
-        boolean drawEffectSprite = EMIffectCompat.isStatusEffect(currentHoveredItem) && OTEIConfig.getEmiDependent().shouldRenderEffectSprite;
+        boolean drawEffectSprite = EMIffectCompat.isStatusEffect(currentHoveredStack) && OTEIConfig.getEmiDependent().shouldDrawEffectSprite;
 
         context.push();
 
-        context.matrices().translate(x + EnlargedObjectDrawer.getXTranspose(false, false), y + EnlargedObjectDrawer.getYTranspose(false, false), drawEffectSprite || isFluid(currentHoveredItem) ? 100 : -10);
-        context.matrices().scale(scale, scale, Math.min(scale, 20f));
+        context.matrices().translate(((IScreenAccessor)screen).otei$getItemX() + EnlargedObjectDrawer.getXTranspose(false, false), ((IScreenAccessor)screen).otei$getItemY() + EnlargedObjectDrawer.getYTranspose(false, false), drawEffectSprite || isFluid(currentHoveredStack) ? 100 : -10);
+        context.matrices().scale(((IScreenAccessor)screen).otei$getScale(), ((IScreenAccessor)screen).otei$getScale(), Math.min(((IScreenAccessor)screen).otei$getScale(), 20f));
 
-        drawEmiIngredient(context, currentHoveredItem, drawEffectSprite, OTEIConfig.getConfigEntries().shouldDrawBarsOnItems);
+        drawEmiIngredient(context, currentHoveredStack, drawEffectSprite, OTEIConfig.getConfigEntries().shouldDrawBarsOnItems);
 
         context.pop();
         return true;
@@ -92,7 +81,8 @@ public class EMICompat
 
     public static void drawEmiIngredient(EmiDrawContext context, EmiIngredient ingredient, boolean drawEffectSprite, boolean drawBar)
     {
-        if(isFluid(ingredient) || drawEffectSprite) ingredient.render(context.raw(), 0, 0, 0, 1);
+        if(drawEffectSprite) ingredient.render(context.raw(), 0, 0, 0);
+        else if(isFluid(ingredient)) EmiAgnos.renderFluid((FluidEmiStack)ingredient, context.matrices(), 0, 0, 0);
         else if((isItem(ingredient) || isFavorite(ingredient)) && drawBar) context.drawStack(ingredient, 0, 0);
         else if(isListOrTag(ingredient) && OTEIConfig.getEmiDependent().shouldCycleThroughListsAndTags)
         {
@@ -101,19 +91,26 @@ public class EMICompat
             int currentStackIndex = (int)(System.currentTimeMillis() / (OTEIConfig.getEmiDependent().adjustItemSwitchTime * 1000) % emiStackList.size());
             EmiIngredient currentStack = emiStackList.get(currentStackIndex);
 
-            if(!drawBar) context.raw().drawItem(getItemStackFromEMIIngredient(currentStack), 0, 0);
-            else context.drawStack(currentStack, 0, 0);
+            if(isFluid(currentStack))
+            {
+                EmiAgnos.renderFluid((FluidEmiStack)ingredient, context.matrices(), 0, 0, 0);
+                return;
+            }
+
+            if(drawBar) context.drawStack(currentStack, 0, 0);
+            else context.raw().drawItem(getItemStackFromEMIIngredient(currentStack), 0, 0);
         }
         else context.raw().drawItem(getItemStackFromEMIIngredient(ingredient), 0, 0);
     }
 
+    public static Item getCurrentHoveredItem() { return currentHoveredItem; }
+
     public static ItemStack getItemStackFromEMIIngredient(EmiIngredient ingredient) { return ingredient.getEmiStacks().get(0).getItemStack(); }
 
-    @SuppressWarnings("UnstableApiUsage")
+    public static boolean isHoveringOverPanel(int mouseX, int mouseY) { return EmiScreenManager.getHoveredPanel(mouseX, mouseY) != null; }
+
     public static boolean isFluid(EmiIngredient hoveredStack) { return hoveredStack instanceof FluidEmiStack; }
-    @SuppressWarnings("UnstableApiUsage")
     public static boolean isItem(EmiIngredient hoveredStack) { return hoveredStack instanceof ItemEmiStack; }
     public static boolean isFavorite(EmiIngredient hoveredStack) { return hoveredStack instanceof EmiFavorite; }
-    @SuppressWarnings("UnstableApiUsage")
     public static boolean isListOrTag(EmiIngredient hoveredStack) { return hoveredStack instanceof ListEmiIngredient || hoveredStack instanceof TagEmiIngredient; }
 }

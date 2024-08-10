@@ -24,12 +24,16 @@
 
 package de.siphalor.bigitemsduh.client_mixin.screen;
 
+import de.siphalor.bigitemsduh.client_mixin.invoker.IAbstractStorageTerminalScreenInvoker;
+import de.siphalor.bigitemsduh.client_mixin.accessor.IHandledScreenAccessor;
+import de.siphalor.bigitemsduh.client_mixin.invoker.IHandledScreenInvoker;
 import de.siphalor.bigitemsduh.compat.bumblezone.BumblezoneCompat;
-import de.siphalor.bigitemsduh.compat.emi.plugin.emi_loot.EMILootCompat;
+import de.siphalor.bigitemsduh.compat.emi.plugin.EMILootCompat;
+import de.siphalor.bigitemsduh.compat.toms_storage.TomsStorageCompat;
 import de.siphalor.bigitemsduh.config.OTEIConfig;
 import de.siphalor.bigitemsduh.util.EnlargedObjectDrawer;
-import de.siphalor.bigitemsduh.OTEI;
-import org.jetbrains.annotations.Nullable;
+import de.siphalor.bigitemsduh.OTEIClient;
+import de.siphalor.bigitemsduh.util.IScreenAccessor;
 import de.siphalor.bigitemsduh.compat.emi.EMICompat;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -38,68 +42,78 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(HandledScreen.class)
-public abstract class MixinHandledScreen extends Screen
+public abstract class MixinHandledScreen extends Screen implements IScreenAccessor
 {
-	@Shadow protected int x;
-	@Shadow @Final protected ScreenHandler handler;
-
-	@Shadow @Nullable protected abstract Slot getSlotAt(double xPosition, double yPosition);
-
 	protected MixinHandledScreen(Text title) { super(title); }
+
+	@Unique private int otei$mouseX;
+	@Unique private int otei$mouseY;
+	@Unique private int otei$x;
+	@Unique private int otei$height;
+
+	@Unique private double otei$itemX;
+	@Unique private double otei$itemY;
+
+	@Unique private float otei$scale;
+
+	@Unique private ItemStack otei$stack;
+
+	@Unique private DrawContext otei$context;
 
 	@Inject(method = "render", at = @At("RETURN"))
 	public void otei$onRendered(DrawContext drawContext, int mouseX, int mouseY, float delta, CallbackInfo ci)
 	{
-		if(!OTEI.shouldItemRender()) return;
+		if(!OTEIClient.shouldItemRender() || this.client == null || this.client.currentScreen == null) return;
 
-		Slot slot = getSlotAt(mouseX, mouseY);
-		ItemStack stack;
+		this.otei$context = drawContext;
 
-		if(slot != null && !slot.getStack().isEmpty()) stack = slot.getStack();
-		else
+		this.otei$mouseX = mouseX;
+		this.otei$mouseY = mouseY;
+		this.otei$height = this.height;
+		this.otei$x = ((IHandledScreenAccessor)this).otei$getX();
+
+		Slot slot = TomsStorageCompat.isStorageTerminalScreen(this.client.currentScreen) && TomsStorageCompat.isHoveringOverItemInTerminalScreen(this.client.currentScreen) ? ((IAbstractStorageTerminalScreenInvoker)this.client.currentScreen).otei$invokeGetSlotUnderMouse() : ((IHandledScreenInvoker)this).otei$invokeGetSlotAt(this.otei$mouseX, this.otei$mouseY);
+
+		if(slot != null && !slot.getStack().isEmpty()) this.otei$stack = slot.getStack();
+		else if(OTEIConfig.getConfigEntries().shouldEnlargeDraggedItems && (((IHandledScreenAccessor)this).otei$getHandler().getCursorStack() != ItemStack.EMPTY || ((IHandledScreenAccessor)this).otei$getHandler().getCursorStack() != null)) this.otei$stack = ((IHandledScreenAccessor)this).otei$getHandler().getCursorStack();
+		else this.otei$stack = ItemStack.EMPTY;
+
+		float size = Math.min(this.otei$x * OTEIConfig.getConfigEntries().itemScale, this.otei$height * (OTEIConfig.getConfigEntries().itemScale));
+		this.otei$scale = size / 16;
+
+		this.otei$itemX = (this.otei$x - size) / 2F;
+		this.otei$itemY = (this.otei$height - size) / 2F;
+
+        if(OTEIClient.getCompatChecker().hasEMI()) { if(EMICompat.drawFocusedEMIStack((HandledScreen<? extends ScreenHandler>) (Object) this)) return; }
+
+        if(OTEIConfig.getEmiDependent().shouldDrawEntitiesModel && (EnlargedObjectDrawer.isSpawnEgg(this.otei$stack.getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(this.otei$stack.getItem())))
 		{
-			if(OTEIConfig.getConfigEntries().shouldEnlargeDraggedItems)
-			{
-				stack = handler.getCursorStack();
+			if(TomsStorageCompat.isStorageTerminalScreen(this.client.currentScreen) && TomsStorageCompat.isHoveringOverItemInTerminalScreen(this.client.currentScreen)) { drawContext.drawItemTooltip(this.textRenderer, this.otei$stack, this.otei$mouseX, this.otei$mouseY); }
 
-				if (stack == null || stack.isEmpty()) return;
-			}
-			else stack = ItemStack.EMPTY;
+			EMILootCompat.drawEmiIngredientAsEntity((HandledScreen<? extends ScreenHandler>)(Object)this, false, false, false);
+			return;
 		}
 
-		float size = Math.min(this.x * OTEIConfig.getConfigEntries().itemScale, this.height * (OTEIConfig.getConfigEntries().itemScale));
-		float scale = size / 16;
-
-		double ix = (this.x - size) / 2F;
-		double iy = (this.height - size) / 2F;
-
-		if(OTEI.hasEMI()) { if(EMICompat.drawFocusedEMIStack(drawContext, this.x, this.height, mouseX, mouseY, (HandledScreen<? extends ScreenHandler>)(Object)this)) return; }
-
-		if((OTEI.hasEMI() && OTEI.hasEMILoot()) && OTEIConfig.getEmiDependent().shouldRenderEntitiesModel)
-		{
-			if(EnlargedObjectDrawer.isSpawnEgg(stack))
-			{
-				EMILootCompat.drawEmiIngredientAsEntity(drawContext, null, stack, (HandledScreen<? extends ScreenHandler>)(Object)this, mouseX, mouseY, this.x, this.height, (int)ix, (int)iy, scale, false, false, false);
-				return;
-			}
-			else if(OTEI.hasBumblezone())
-			{
-				if (BumblezoneCompat.isSentryWatcherSpawnEgg(stack.getItem()))
-				{
-					EMILootCompat.drawEmiIngredientAsEntity(drawContext, null, stack, (HandledScreen<? extends ScreenHandler>)(Object)this, mouseX, mouseY, this.x, this.height, (int)ix, (int)iy, scale, false, false, false);
-					return;
-				}
-			}
-		}
-
-		EnlargedObjectDrawer.drawObject(drawContext, stack, (int)ix, (int)iy, scale, (HandledScreen<?>)(Object)this);
+		EnlargedObjectDrawer.drawObject((HandledScreen<? extends ScreenHandler>)(Object)this);
 	}
+
+	@Override public int otei$getMouseX() { return this.otei$mouseX; }
+	@Override public int otei$getMouseY() { return this.otei$mouseY; }
+	@Override public int otei$getScreenX() { return this.otei$x; }
+	@Override public int otei$getScreenHeight() { return this.otei$height; }
+	@Override public int otei$getItemX() { return (int)this.otei$itemX; }
+	@Override public int otei$getItemY() { return (int)this.otei$itemY; }
+
+	@Override public float otei$getScale() { return this.otei$scale; }
+
+	@Override public ItemStack otei$getStack() { return otei$stack; }
+
+	@Override public DrawContext otei$getContext() { return otei$context; }
 }

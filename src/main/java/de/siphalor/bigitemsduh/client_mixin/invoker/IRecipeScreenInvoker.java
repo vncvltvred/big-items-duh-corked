@@ -25,17 +25,18 @@
     For more information, please refer to <https://unlicense.org>
 */
 
-package de.siphalor.bigitemsduh.client_mixin.screen.invoker;
+package de.siphalor.bigitemsduh.client_mixin.invoker;
 
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.item.ItemStack;
+import dev.emi.emi.api.stack.EmiIngredient;
+import dev.emi.emi.api.widget.Widget;
+import dev.emi.emi.screen.RecipeScreen;
+import dev.emi.emi.screen.WidgetGroup;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin(HandledScreen.class)
-public interface HandledScreenInvoker
+@Mixin(RecipeScreen.class) public interface IRecipeScreenInvoker
 {
-    @Invoker("drawItem")
-    void invokeDrawItem(DrawContext context, ItemStack stack, int x, int y, String amountText);
+    @Invoker(value = "getHoveredStack", remap = false) EmiIngredient otei$invokeGetHoveredStack();
+
+    @Invoker(value = "getGroup", remap = false) WidgetGroup otei$invokeGetGroup(Widget widget);
 }

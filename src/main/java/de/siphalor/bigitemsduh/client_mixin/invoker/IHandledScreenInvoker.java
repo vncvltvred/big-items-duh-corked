@@ -25,26 +25,19 @@
     For more information, please refer to <https://unlicense.org>
 */
 
-package de.siphalor.bigitemsduh.compat.bumblezone;
+package de.siphalor.bigitemsduh.client_mixin.invoker;
 
-import com.telepathicgrunt.the_bumblezone.items.SentryWatcherSpawnEgg;
-import de.siphalor.bigitemsduh.OTEIClient;
-import net.minecraft.entity.EntityType;
-import net.minecraft.item.Item;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.item.ItemStack;
+import net.minecraft.screen.slot.Slot;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Invoker;
 
-public class BumblezoneCompat
+@Mixin(HandledScreen.class)
+public interface IHandledScreenInvoker
 {
-    public static EntityType<?> handleSentryWatcherSpawnEgg(Item item)
-    {
-        SentryWatcherSpawnEgg egg = (SentryWatcherSpawnEgg) item;
+    @Invoker("getSlotAt") Slot otei$invokeGetSlotAt(double xPosition, double yPosition);
 
-        return egg.getType(item.getDefaultStack().getNbt());
-    }
-
-    public static boolean isSentryWatcherSpawnEgg(Item item)
-    {
-        if(!OTEIClient.getCompatChecker().hasBumblezone()) return false;
-
-        return item instanceof SentryWatcherSpawnEgg;
-    }
+    @Invoker("drawItem") void otei$invokeDrawItem(DrawContext context, ItemStack stack, int x, int y, String amountText);
 }

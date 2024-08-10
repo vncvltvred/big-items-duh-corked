@@ -25,26 +25,14 @@
     For more information, please refer to <https://unlicense.org>
 */
 
-package de.siphalor.bigitemsduh.compat.bumblezone;
+package de.siphalor.bigitemsduh.util;
 
-import com.telepathicgrunt.the_bumblezone.items.SentryWatcherSpawnEgg;
-import de.siphalor.bigitemsduh.OTEIClient;
-import net.minecraft.entity.EntityType;
-import net.minecraft.item.Item;
+import net.fabricmc.loader.api.FabricLoader;
 
-public class BumblezoneCompat
+public record OTEICompatChecker(boolean hasREI, boolean hasEMI, boolean hasEMIffect, boolean hasEMILoot, boolean hasEMITrades, boolean hasTomsStorage, boolean hasBumblezone)
 {
-    public static EntityType<?> handleSentryWatcherSpawnEgg(Item item)
+    public static OTEICompatChecker create()
     {
-        SentryWatcherSpawnEgg egg = (SentryWatcherSpawnEgg) item;
-
-        return egg.getType(item.getDefaultStack().getNbt());
-    }
-
-    public static boolean isSentryWatcherSpawnEgg(Item item)
-    {
-        if(!OTEIClient.getCompatChecker().hasBumblezone()) return false;
-
-        return item instanceof SentryWatcherSpawnEgg;
+        return new OTEICompatChecker(FabricLoader.getInstance().isModLoaded("roughlyenoughitems"), FabricLoader.getInstance().isModLoaded("emi"), FabricLoader.getInstance().isModLoaded("emiffect"), FabricLoader.getInstance().isModLoaded("emi_loot"), FabricLoader.getInstance().isModLoaded("emitrades"), FabricLoader.getInstance().isModLoaded("toms_storage"), FabricLoader.getInstance().isModLoaded("the_bumblezone"));
     }
 }

@@ -25,26 +25,15 @@
     For more information, please refer to <https://unlicense.org>
 */
 
-package de.siphalor.bigitemsduh.compat.bumblezone;
+package de.siphalor.bigitemsduh.client_mixin.invoker;
 
-import com.telepathicgrunt.the_bumblezone.items.SentryWatcherSpawnEgg;
-import de.siphalor.bigitemsduh.OTEIClient;
-import net.minecraft.entity.EntityType;
-import net.minecraft.item.Item;
+import com.tom.storagemod.gui.AbstractStorageTerminalScreen;
+import net.minecraft.screen.slot.Slot;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Invoker;
 
-public class BumblezoneCompat
+@Mixin(AbstractStorageTerminalScreen.class)
+public interface IAbstractStorageTerminalScreenInvoker
 {
-    public static EntityType<?> handleSentryWatcherSpawnEgg(Item item)
-    {
-        SentryWatcherSpawnEgg egg = (SentryWatcherSpawnEgg) item;
-
-        return egg.getType(item.getDefaultStack().getNbt());
-    }
-
-    public static boolean isSentryWatcherSpawnEgg(Item item)
-    {
-        if(!OTEIClient.getCompatChecker().hasBumblezone()) return false;
-
-        return item instanceof SentryWatcherSpawnEgg;
-    }
+    @Invoker("getSlotUnderMouse") Slot otei$invokeGetSlotUnderMouse();
 }

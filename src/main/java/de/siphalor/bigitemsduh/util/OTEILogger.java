@@ -25,26 +25,18 @@
     For more information, please refer to <https://unlicense.org>
 */
 
-package de.siphalor.bigitemsduh.compat.bumblezone;
+package de.siphalor.bigitemsduh.util;
 
-import com.telepathicgrunt.the_bumblezone.items.SentryWatcherSpawnEgg;
-import de.siphalor.bigitemsduh.OTEIClient;
-import net.minecraft.entity.EntityType;
-import net.minecraft.item.Item;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public class BumblezoneCompat
+public class OTEILogger
 {
-    public static EntityType<?> handleSentryWatcherSpawnEgg(Item item)
-    {
-        SentryWatcherSpawnEgg egg = (SentryWatcherSpawnEgg) item;
+    public static final String MOD_NAME = "Obviously They're Enlarged Items!";
 
-        return egg.getType(item.getDefaultStack().getNbt());
-    }
+    public static Logger LOGGER = LogManager.getLogger("otei");
 
-    public static boolean isSentryWatcherSpawnEgg(Item item)
-    {
-        if(!OTEIClient.getCompatChecker().hasBumblezone()) return false;
-
-        return item instanceof SentryWatcherSpawnEgg;
-    }
+    public static void logInfo(String message) { LOGGER.info("[{}] {}", MOD_NAME, message); }
+    public static void logInfo(Object message1, String message2) { LOGGER.info("[{}] {} {}", MOD_NAME, message1, message2); }
+    public static void logError(String message) { LOGGER.error("[{}] {}", MOD_NAME, message); }
 }

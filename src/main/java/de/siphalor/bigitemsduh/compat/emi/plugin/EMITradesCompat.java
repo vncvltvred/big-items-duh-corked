@@ -25,26 +25,18 @@
     For more information, please refer to <https://unlicense.org>
 */
 
-package de.siphalor.bigitemsduh.compat.bumblezone;
+package de.siphalor.bigitemsduh.compat.emi.plugin;
 
-import com.telepathicgrunt.the_bumblezone.items.SentryWatcherSpawnEgg;
 import de.siphalor.bigitemsduh.OTEIClient;
-import net.minecraft.entity.EntityType;
-import net.minecraft.item.Item;
+import dev.emi.emi.api.stack.EmiIngredient;
+import io.github.prismwork.emitrades.util.EntityEmiStack;
 
-public class BumblezoneCompat
+public class EMITradesCompat
 {
-    public static EntityType<?> handleSentryWatcherSpawnEgg(Item item)
+    public static boolean isEMITradesEntityStack(EmiIngredient hoveredStack)
     {
-        SentryWatcherSpawnEgg egg = (SentryWatcherSpawnEgg) item;
+        if(!OTEIClient.getCompatChecker().hasEMITrades()) return false;
 
-        return egg.getType(item.getDefaultStack().getNbt());
-    }
-
-    public static boolean isSentryWatcherSpawnEgg(Item item)
-    {
-        if(!OTEIClient.getCompatChecker().hasBumblezone()) return false;
-
-        return item instanceof SentryWatcherSpawnEgg;
+        return hoveredStack instanceof EntityEmiStack;
     }
 }

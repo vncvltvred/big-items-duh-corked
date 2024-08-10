@@ -37,5 +37,8 @@ import net.fabricmc.api.Environment;
 @Environment(EnvType.CLIENT)
 public class ModMenuCompat implements ModMenuApi
 {
-    @Override public ConfigScreenFactory<?> getModConfigScreenFactory() { return parent -> AutoConfig.getConfigScreen(OTEIConfig.class, parent).get(); }
+    @Override public ConfigScreenFactory<?> getModConfigScreenFactory()
+    {
+        return parent -> AutoConfig.getConfigScreen(OTEIConfig.class, parent).get();
+    }
 }

@@ -1,7 +1,7 @@
 {
 	"key.categories.otei": "Obviously They're Enlarged Items!",
-	"key.otei.hold_item_enlargement": "Hold to Enlarge Item",
-	"key.otei.toggle_item_enlargement": "Toggle Item Enlargement",
+	"key.otei.hold_object_enlargement": "Hold to Enlarge Object",
+	"key.otei.toggle_object_enlargement": "Toggle Object Enlargement",
 	"text.autoconfig.otei.title": "Obviously They're Enlarged Items!",
 	"text.autoconfig.otei.option.xTranspose": "X Transpose",
 	"text.autoconfig.otei.option.yTranspose": "Y Transpose",
