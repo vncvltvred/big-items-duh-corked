@@ -32,9 +32,9 @@ import org.apache.logging.log4j.Logger;
 
 public class OTEILogger
 {
-    public static final String MOD_NAME = "Obviously They're Enlarged Items!";
+    private static final String MOD_NAME = "Obviously They're Enlarged Items!";
 
-    public static Logger LOGGER = LogManager.getLogger("otei");
+    private static final Logger LOGGER = LogManager.getLogger("otei");
 
     public static void logInfo(String message) { LOGGER.info("[{}] {}", MOD_NAME, message); }
     public static void logInfo(Object message1, String message2) { LOGGER.info("[{}] {} {}", MOD_NAME, message1, message2); }

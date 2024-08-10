@@ -58,7 +58,7 @@ public class EMICompat
 
         if(currentHoveredStack.isEmpty()) return false;
 
-        if(EnlargedObjectDrawer.isSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem())) currentHoveredItem = getItemStackFromEMIIngredient(currentHoveredStack).getItem();
+        if(EnlargedObjectDrawer.isSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem())) currentHoveredItem = getItemStackFromEMIIngredient(currentHoveredStack).getItem();
 
         if(OTEIConfig.getEmiDependent().shouldDrawEntitiesModel && (EnlargedObjectDrawer.isSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem())))
         {

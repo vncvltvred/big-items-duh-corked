@@ -136,14 +136,15 @@ public class EMILootCompat
 
     public static EmiIngredient getIconGroupEmiWidgetSlotStack(Screen screen)
     {
-        WidgetGroup currentWidgetGroup = ((IRecipeScreenInvoker)screen).otei$invokeGetGroup(((IRecipeScreenAccessor)screen).otei$getHoveredWidget());
+        Widget hoveredWidget = ((IRecipeScreenAccessor)screen).otei$getHoveredWidget();
+        WidgetGroup currentWidgetGroup = ((IRecipeScreenInvoker)screen).otei$invokeGetGroup(hoveredWidget);
 
         int mouseX = ((IScreenAccessor)screen).otei$getMouseX() - currentWidgetGroup.x();
         int mouseY = ((IScreenAccessor)screen).otei$getMouseY() - currentWidgetGroup.y();
 
         AtomicReference<EmiIngredient> stack = new AtomicReference<>();
 
-        ((IIconGroupEmiWidgetAccessor)((IRecipeScreenAccessor)screen).otei$getHoveredWidget()).otei$getItems().stream()
+        ((IIconGroupEmiWidgetAccessor)hoveredWidget).otei$getItems().stream()
                 .filter(slot -> slot.getBounds().contains(mouseX, mouseY))
                 .findAny()
                 .ifPresentOrElse(slot -> stack.set(slot.getStack()), () -> stack.set(EmiStack.EMPTY));
