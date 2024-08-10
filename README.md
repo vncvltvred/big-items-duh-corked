@@ -7,7 +7,7 @@ Well, simply put, it's a fork of the original mod with added compatibility for E
 
 ###### 2. Why should you choose this over the original?
 
-If you don't use EMi, you get a little bit of some extra features. Though, the EMi compat is where OTEI[^1] really shines. Mod size is also optimized from 770KB to 114KB, we love optimization!
+If you don't use EMi, you get a little bit of some extra features. Though, the EMi compat is where OTEI[^1] really shines. Mod size is also optimized from 770KB to 119KB, we love optimization!
 
 ### Configuration
 
