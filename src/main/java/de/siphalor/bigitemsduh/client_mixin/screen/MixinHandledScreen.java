@@ -31,7 +31,7 @@ import de.siphalor.bigitemsduh.compat.bumblezone.BumblezoneCompat;
 import de.siphalor.bigitemsduh.compat.emi.plugin.EMILootCompat;
 import de.siphalor.bigitemsduh.compat.toms_storage.TomsStorageCompat;
 import de.siphalor.bigitemsduh.config.OTEIConfig;
-import de.siphalor.bigitemsduh.util.EnlargedObjectDrawer;
+import de.siphalor.bigitemsduh.util.StackRender;
 import de.siphalor.bigitemsduh.OTEIClient;
 import de.siphalor.bigitemsduh.util.IScreenAccessor;
 import de.siphalor.bigitemsduh.compat.emi.EMICompat;
@@ -48,6 +48,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+@SuppressWarnings("all")
 @Mixin(HandledScreen.class)
 public abstract class MixinHandledScreen extends Screen implements IScreenAccessor
 {
@@ -72,6 +73,9 @@ public abstract class MixinHandledScreen extends Screen implements IScreenAccess
 	{
 		if(!OTEIClient.shouldItemRender() || this.client == null || this.client.currentScreen == null) return;
 
+		HandledScreen accessibleScreen = ((HandledScreen<? extends ScreenHandler>)(Object)this);
+		Screen currentScreen = this.client.currentScreen;
+
 		this.otei$context = drawContext;
 
 		this.otei$mouseX = mouseX;
@@ -79,10 +83,10 @@ public abstract class MixinHandledScreen extends Screen implements IScreenAccess
 		this.otei$height = this.height;
 		this.otei$x = ((IHandledScreenAccessor)this).otei$getX();
 
-		Slot slot = TomsStorageCompat.isStorageTerminalScreen(this.client.currentScreen) && TomsStorageCompat.isHoveringOverItemInTerminalScreen(this.client.currentScreen) ? ((IAbstractStorageTerminalScreenInvoker)this.client.currentScreen).otei$invokeGetSlotUnderMouse() : ((IHandledScreenInvoker)this).otei$invokeGetSlotAt(this.otei$mouseX, this.otei$mouseY);
+		Slot slot = TomsStorageCompat.isStorageTerminalScreen(currentScreen) && TomsStorageCompat.isHoveringOverItemInTerminalScreen(currentScreen) ? ((IAbstractStorageTerminalScreenInvoker)currentScreen).otei$invokeGetSlotUnderMouse() : ((IHandledScreenInvoker)accessibleScreen).otei$invokeGetSlotAt(this.otei$mouseX, this.otei$mouseY);
 
 		if(slot != null && !slot.getStack().isEmpty()) this.otei$stack = slot.getStack();
-		else if(OTEIConfig.getConfigEntries().shouldEnlargeDraggedItems && (((IHandledScreenAccessor)this).otei$getHandler().getCursorStack() != ItemStack.EMPTY || ((IHandledScreenAccessor)this).otei$getHandler().getCursorStack() != null)) this.otei$stack = ((IHandledScreenAccessor)this).otei$getHandler().getCursorStack();
+		else if(OTEIConfig.getConfigEntries().shouldEnlargeDraggedItems && (((IHandledScreenAccessor)accessibleScreen).otei$getHandler().getCursorStack() != ItemStack.EMPTY || ((IHandledScreenAccessor)accessibleScreen).otei$getHandler().getCursorStack() != null)) this.otei$stack = ((IHandledScreenAccessor)accessibleScreen).otei$getHandler().getCursorStack();
 		else this.otei$stack = ItemStack.EMPTY;
 
 		float size = Math.min(this.otei$x * OTEIConfig.getConfigEntries().itemScale, this.otei$height * (OTEIConfig.getConfigEntries().itemScale));
@@ -91,17 +95,20 @@ public abstract class MixinHandledScreen extends Screen implements IScreenAccess
 		this.otei$itemX = (this.otei$x - size) / 2F;
 		this.otei$itemY = (this.otei$height - size) / 2F;
 
-        if(OTEIClient.getCompatChecker().hasEMI()) { if(EMICompat.drawFocusedEMIStack((HandledScreen<? extends ScreenHandler>) (Object) this)) return; }
-
-        if(OTEIConfig.getEmiDependent().shouldDrawEntitiesModel && (EnlargedObjectDrawer.isSpawnEgg(this.otei$stack.getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(this.otei$stack.getItem())))
+        if(OTEIClient.getCompatChecker().hasEMI())
 		{
-			if(TomsStorageCompat.isStorageTerminalScreen(this.client.currentScreen) && TomsStorageCompat.isHoveringOverItemInTerminalScreen(this.client.currentScreen)) { drawContext.drawItemTooltip(this.textRenderer, this.otei$stack, this.otei$mouseX, this.otei$mouseY); }
+			if(EMICompat.drawFocusedEMIStack(accessibleScreen)) return;
 
-			EMILootCompat.drawEmiIngredientAsEntity((HandledScreen<? extends ScreenHandler>)(Object)this, false, false, false);
-			return;
+			if(OTEIConfig.getEmiDependentEntries().shouldDrawEntitiesModel && (StackRender.isSpawnEgg(this.otei$stack.getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(this.otei$stack.getItem())))
+			{
+				if(TomsStorageCompat.isStorageTerminalScreen(currentScreen) && TomsStorageCompat.isHoveringOverItemInTerminalScreen(currentScreen)) { drawContext.drawItemTooltip(this.textRenderer, this.otei$stack, this.otei$mouseX, this.otei$mouseY); }
+
+				EMILootCompat.drawEmiIngredientAsEntity(accessibleScreen, false, false, false);
+				return;
+			}
 		}
 
-		EnlargedObjectDrawer.drawObject((HandledScreen<? extends ScreenHandler>)(Object)this);
+		StackRender.drawStack(accessibleScreen);
 	}
 
 	@Override public int otei$getMouseX() { return this.otei$mouseX; }

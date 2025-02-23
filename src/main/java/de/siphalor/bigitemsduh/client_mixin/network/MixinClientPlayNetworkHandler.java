@@ -28,7 +28,7 @@
 package de.siphalor.bigitemsduh.client_mixin.network;
 
 import de.siphalor.bigitemsduh.config.OTEIConfig;
-import de.siphalor.bigitemsduh.util.EnlargedObjectDrawer;
+import de.siphalor.bigitemsduh.util.StackRender;
 import de.siphalor.bigitemsduh.util.OTEILogger;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.entity.SpawnGroup;
@@ -46,10 +46,10 @@ public class MixinClientPlayNetworkHandler
     @Inject(at = @At("TAIL"), method = "onGameJoin")
     private void printEntityTypesOnGameJoin(CallbackInfo info)
     {
-        if(!OTEIConfig.getEmiDependent().printEntityTypes) return;
+        if(!OTEIConfig.getEmiDependentEntries().printEntityTypes) return;
 
         Registries.ENTITY_TYPE.stream()
                 .filter(type -> type.getSpawnGroup() != SpawnGroup.MISC)
-                .forEachOrdered(type -> OTEILogger.logInfo(EnlargedObjectDrawer.getEggTypeString(type)));
+                .forEachOrdered(type -> OTEILogger.logInfo(StackRender.getEggTypeString(type)));
     }
 }

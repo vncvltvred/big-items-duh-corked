@@ -31,7 +31,7 @@ import de.siphalor.bigitemsduh.compat.bumblezone.BumblezoneCompat;
 import de.siphalor.bigitemsduh.compat.emi.plugin.EMILootCompat;
 import de.siphalor.bigitemsduh.compat.emi.plugin.EMIffectCompat;
 import de.siphalor.bigitemsduh.config.OTEIConfig;
-import de.siphalor.bigitemsduh.util.EnlargedObjectDrawer;
+import de.siphalor.bigitemsduh.util.StackRender;
 import de.siphalor.bigitemsduh.util.IScreenAccessor;
 import dev.emi.emi.api.stack.*;
 import dev.emi.emi.platform.EmiAgnos;
@@ -52,26 +52,28 @@ public class EMICompat
     public static boolean drawFocusedEMIStack(Screen screen)
     {
         if(EmiScreenManager.isDisabled()) return false;
+        
+        IScreenAccessor accessedScreen = ((IScreenAccessor)screen);
 
-        EmiDrawContext context = EmiDrawContext.wrap(((IScreenAccessor)screen).otei$getContext());
-        EmiIngredient currentHoveredStack = EmiScreenManager.getHoveredStack(((IScreenAccessor)screen).otei$getMouseX(), ((IScreenAccessor)screen).otei$getMouseY(), false).getStack();
+        EmiDrawContext context = EmiDrawContext.wrap(accessedScreen.otei$getContext());
+        EmiIngredient currentHoveredStack = EmiScreenManager.getHoveredStack(accessedScreen.otei$getMouseX(), accessedScreen.otei$getMouseY(), false).getStack();
 
         if(currentHoveredStack.isEmpty()) return false;
 
-        if(EnlargedObjectDrawer.isSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem())) currentHoveredItem = getItemStackFromEMIIngredient(currentHoveredStack).getItem();
+        if(StackRender.isSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem())) currentHoveredItem = getItemStackFromEMIIngredient(currentHoveredStack).getItem();
 
-        if(OTEIConfig.getEmiDependent().shouldDrawEntitiesModel && (EnlargedObjectDrawer.isSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem())))
+        if(OTEIConfig.getEmiDependentEntries().shouldDrawEntitiesModel && (StackRender.isSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(getItemStackFromEMIIngredient(currentHoveredStack).getItem())))
         {
             EMILootCompat.drawEmiIngredientAsEntity(screen, false, false, true);
             return true;
         }
 
-        boolean drawEffectSprite = EMIffectCompat.isStatusEffect(currentHoveredStack) && OTEIConfig.getEmiDependent().shouldDrawEffectSprite;
+        boolean drawEffectSprite = EMIffectCompat.isStatusEffect(currentHoveredStack) && OTEIConfig.getEmiDependentEntries().shouldDrawEffectSprite;
 
         context.push();
 
-        context.matrices().translate(((IScreenAccessor)screen).otei$getItemX() + EnlargedObjectDrawer.getXTranspose(false, false), ((IScreenAccessor)screen).otei$getItemY() + EnlargedObjectDrawer.getYTranspose(false, false), drawEffectSprite || isFluid(currentHoveredStack) ? 100 : -10);
-        context.matrices().scale(((IScreenAccessor)screen).otei$getScale(), ((IScreenAccessor)screen).otei$getScale(), Math.min(((IScreenAccessor)screen).otei$getScale(), 20f));
+        context.matrices().translate(accessedScreen.otei$getItemX() + StackRender.getXTranspose(false, false), accessedScreen.otei$getItemY() + StackRender.getYTranspose(false, false), drawEffectSprite || isFluid(currentHoveredStack) ? 100 : -10);
+        context.matrices().scale(accessedScreen.otei$getScale(), accessedScreen.otei$getScale(), Math.min(accessedScreen.otei$getScale(), 20f));
 
         drawEmiIngredient(context, currentHoveredStack, drawEffectSprite, OTEIConfig.getConfigEntries().shouldDrawBarsOnItems);
 
@@ -84,11 +86,11 @@ public class EMICompat
         if(drawEffectSprite) ingredient.render(context.raw(), 0, 0, 0);
         else if(isFluid(ingredient)) EmiAgnos.renderFluid((FluidEmiStack)ingredient, context.matrices(), 0, 0, 0);
         else if((isItem(ingredient) || isFavorite(ingredient)) && drawBar) context.drawStack(ingredient, 0, 0);
-        else if(isListOrTag(ingredient) && OTEIConfig.getEmiDependent().shouldCycleThroughListsAndTags)
+        else if((isListOrTag(ingredient)) && OTEIConfig.getEmiDependentEntries().shouldCycleThroughListsAndTags)
         {
             List<EmiStack> emiStackList = ingredient.getEmiStacks();
 
-            int currentStackIndex = (int)(System.currentTimeMillis() / (OTEIConfig.getEmiDependent().adjustItemSwitchTime * 1000) % emiStackList.size());
+            int currentStackIndex = (int)(System.currentTimeMillis() / (OTEIConfig.getEmiDependentEntries().adjustItemSwitchTime * 1000) % emiStackList.size());
             EmiIngredient currentStack = emiStackList.get(currentStackIndex);
 
             if(isFluid(currentStack))
@@ -112,5 +114,5 @@ public class EMICompat
     public static boolean isFluid(EmiIngredient hoveredStack) { return hoveredStack instanceof FluidEmiStack; }
     public static boolean isItem(EmiIngredient hoveredStack) { return hoveredStack instanceof ItemEmiStack; }
     public static boolean isFavorite(EmiIngredient hoveredStack) { return hoveredStack instanceof EmiFavorite; }
-    public static boolean isListOrTag(EmiIngredient hoveredStack) { return hoveredStack instanceof ListEmiIngredient || hoveredStack instanceof TagEmiIngredient; }
+    public static boolean isListOrTag(EmiIngredient hoveredStack) { return hoveredStack instanceof ListEmiIngredient || hoveredStack instanceof TagEmiIngredient || EMILootCompat.isQuantityListEmiIngredient(hoveredStack); }
 }

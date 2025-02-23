@@ -34,9 +34,9 @@ import de.siphalor.bigitemsduh.client_mixin.invoker.IRecipeScreenInvoker;
 import de.siphalor.bigitemsduh.compat.bumblezone.BumblezoneCompat;
 import de.siphalor.bigitemsduh.compat.emi.EMICompat;
 import de.siphalor.bigitemsduh.config.OTEIConfig;
-import de.siphalor.bigitemsduh.util.EnlargedObjectDrawer;
 import de.siphalor.bigitemsduh.util.IScreenAccessor;
 import de.siphalor.bigitemsduh.util.OTEILogger;
+import de.siphalor.bigitemsduh.util.StackRender;
 import dev.emi.emi.EmiRenderHelper;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
@@ -46,8 +46,10 @@ import dev.emi.emi.screen.RecipeScreen;
 import dev.emi.emi.screen.WidgetGroup;
 import fzzyhmstrs.emi_loot.util.EntityEmiStack;
 import fzzyhmstrs.emi_loot.util.IconGroupEmiWidget;
+import fzzyhmstrs.emi_loot.util.QuantityListEmiIngredient;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -59,79 +61,132 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class EMILootCompat
 {
-    public static void drawEmiIngredientAsEntity(Screen screen, boolean isRecipeScreen, boolean isEMIPanelStackInRecipeScreen, boolean inEmi)
+    public static void drawEmiIngredientAsEntity(Screen screen, boolean isRecipeScreen, boolean isPanelStackInRecipeScreen, boolean inEmi)
     {
-        // I got a null pointer for drawContext in a large
-        // modpack setting so we will check in case
-        if(((IScreenAccessor)screen).otei$getContext() == null || !OTEIClient.getCompatChecker().hasEMILoot()) return;
+        IScreenAccessor accessedScreen = (IScreenAccessor) screen;
 
-        Item egg = ((IScreenAccessor)screen).otei$getStack().getItem();
-        EmiStack placeholderStack = EmiStack.EMPTY;
-        EntityType<?> eggType;
+        if (!isValidContext(accessedScreen)) return;
 
-        if(screen instanceof RecipeScreen recipeScreen) { if(isEntity(recipeScreen.getHoveredStack()) || EMITradesCompat.isEMITradesEntityStack(recipeScreen.getHoveredStack())) placeholderStack = (EmiStack) recipeScreen.getHoveredStack(); }
+        Item currentItem = getCurrentItem(accessedScreen);
+        EntityType<?> entityType = getEntityType(screen, currentItem);
 
-        if(egg instanceof AirBlockItem && EMICompat.isHoveringOverPanel(((IScreenAccessor)screen).otei$getMouseX(), ((IScreenAccessor)screen).otei$getMouseY())) egg = EMICompat.getCurrentHoveredItem();
+        if (entityType == null) logAndDrawSpawnEggFallback(accessedScreen, currentItem, isRecipeScreen, isPanelStackInRecipeScreen);
+        else renderEntity(accessedScreen, entityType, isRecipeScreen, isPanelStackInRecipeScreen, inEmi);
+    }
 
-        eggType = !placeholderStack.isEmpty() ? ((Entity)placeholderStack.getKey()).getType() : handleCompat(egg);
+    private static boolean isValidContext(IScreenAccessor accessedScreen) { return accessedScreen.otei$getContext() != null && OTEIClient.getCompatChecker().hasEMILoot(); }
 
-        // Account for potential null values and draw their item instead
-        if(eggType == null)
+    private static Item getCurrentItem(IScreenAccessor screen)
+    {
+        Item item = screen.otei$getStack().getItem();
+
+        if (item instanceof AirBlockItem && EMICompat.isHoveringOverPanel(screen.otei$getMouseX(), screen.otei$getMouseY())) item = EMICompat.getCurrentHoveredItem();
+
+        return item;
+    }
+
+    private static EntityType<?> getEntityType(Screen screen, Item item)
+    {
+        if (screen instanceof RecipeScreen recipeScreen)
         {
-            OTEILogger.logInfo(egg.getName(), "has an invalid entity type, please report this ASAP!");
-            ((IScreenAccessor)screen).otei$getContext().getMatrices().push();
+            EmiStack hoveredStack = (EmiStack) recipeScreen.getHoveredStack();
 
-            ((IScreenAccessor)screen).otei$getContext().getMatrices().translate(((IScreenAccessor)screen).otei$getItemX() + (EnlargedObjectDrawer.getXTranspose(isEMIPanelStackInRecipeScreen, isRecipeScreen)), ((IScreenAccessor)screen).otei$getItemY() + (EnlargedObjectDrawer.getYTranspose(isEMIPanelStackInRecipeScreen, isRecipeScreen)), -10);
-            ((IScreenAccessor)screen).otei$getContext().getMatrices().scale(((IScreenAccessor)screen).otei$getScale(), ((IScreenAccessor)screen).otei$getScale(), Math.min(((IScreenAccessor)screen).otei$getScale(), 20f));
-            ((IScreenAccessor)screen).otei$getContext().drawItem(egg.getDefaultStack(), 0, 0);
-
-            ((IScreenAccessor)screen).otei$getContext().getMatrices().pop();
-            return;
+            if (isEntityStack(hoveredStack)) return ((Entity) hoveredStack.getKey()).getType();
         }
 
-        float eggEntityScale = OTEIConfig.getEmiDependent().individualAdjustableEntityScales.getOrDefault(EnlargedObjectDrawer.getEggTypeString(eggType), OTEIConfig.getEmiDependent().defaultEntityScale);
-        float size = Math.min(((IScreenAccessor)screen).otei$getScreenX() * eggEntityScale, ((IScreenAccessor)screen).otei$getScreenHeight() * eggEntityScale);
-        float entityScale = size / 16;
+        return handleCompat(item);
+    }
 
-        double ex = (((IScreenAccessor)screen).otei$getScreenX() - size) / 2F;
-        double ey = (((IScreenAccessor)screen).otei$getScreenHeight() - size) / 2F;
+    private static boolean isEntityStack(EmiStack stack) { return stack != null && (isEntity(stack) || EMITradesCompat.isEMITradesEntityStack(stack)); }
 
-        ((IScreenAccessor)screen).otei$getContext().getMatrices().push();
+    private static void logAndDrawSpawnEggFallback(IScreenAccessor accessedScreen, Item item, boolean isRecipeScreen, boolean isPanelStackInRecipeScreen)
+    {
+        OTEILogger.logInfo(item.getName(), "has an invalid entity type, please report this ASAP!");
 
-        ((IScreenAccessor)screen).otei$getContext().getMatrices().translate(ex + (EnlargedObjectDrawer.getXTranspose(isEMIPanelStackInRecipeScreen, isRecipeScreen)), ey + (EnlargedObjectDrawer.getYTranspose(isEMIPanelStackInRecipeScreen, isRecipeScreen, eggType)), -10);
-        ((IScreenAccessor)screen).otei$getContext().getMatrices().scale(entityScale, entityScale, Math.min(entityScale, 20f));
+        accessedScreen.otei$getContext().getMatrices().push();
+        drawSpawnEgg(accessedScreen, item, isRecipeScreen, isPanelStackInRecipeScreen);
+        accessedScreen.otei$getContext().getMatrices().pop();
+    }
 
-        EmiStack entityStack;
+    private static void drawSpawnEgg(IScreenAccessor accessedScreen, Item item, boolean isRecipeScreen, boolean isPanelStackInRecipeScreen)
+    {
+        accessedScreen.otei$getContext().getMatrices().translate(
+                accessedScreen.otei$getItemX() + StackRender.getXTranspose(isPanelStackInRecipeScreen, isRecipeScreen),
+                accessedScreen.otei$getItemY() + StackRender.getYTranspose(isPanelStackInRecipeScreen, isRecipeScreen),
+                -10
+        );
+        accessedScreen.otei$getContext().getMatrices().scale(
+                accessedScreen.otei$getScale(),
+                accessedScreen.otei$getScale(),
+                Math.min(accessedScreen.otei$getScale(), 20f)
+        );
+        accessedScreen.otei$getContext().drawItem(item.getDefaultStack(), 0, 0);
+    }
 
-        if(!placeholderStack.isEmpty()) entityStack = placeholderStack;
-        else
+    private static void renderEntity(IScreenAccessor accessedScreen, EntityType<?> eggType, boolean isRecipeScreen, boolean isPanelStackInRecipeScreen, boolean inEmi)
+    {
+        float scale = getEntityScale(eggType, accessedScreen);
+        double positionX = calculatePositionX(accessedScreen, scale);
+        double positionY = calculatePositionY(accessedScreen, scale, isRecipeScreen, isPanelStackInRecipeScreen, eggType);
+
+        MatrixStack matrices = accessedScreen.otei$getContext().getMatrices();
+        matrices.push();
+        matrices.translate(positionX, positionY, -10);
+        matrices.scale(scale, scale, Math.min(scale, 20f));
+
+        EmiStack entityStack = createEntityEmiStackOrPlaceholder(eggType);
+        renderEntityStack(entityStack, accessedScreen, inEmi);
+
+        matrices.pop();
+    }
+
+    private static double calculatePositionX(IScreenAccessor accessedScreen, float scale)
+    {
+        return (accessedScreen.otei$getScreenX() - scale) / 2F
+                + StackRender.getXTranspose(false, false);
+    }
+
+    private static double calculatePositionY(IScreenAccessor accessedScreen, float scale, boolean isRecipeScreen, boolean isPanelStackInRecipeScreen, EntityType<?> eggType)
+    {
+        return (accessedScreen.otei$getScreenHeight() - scale) / 2F
+                + StackRender.getYTranspose(isPanelStackInRecipeScreen, isRecipeScreen, eggType);
+    }
+
+    private static float getEntityScale(EntityType<?> eggType, IScreenAccessor accessedScreen)
+    {
+        float baseScale = OTEIConfig.getEmiDependentEntries().defaultEntityScale;
+        float customScale = OTEIConfig.getEmiDependentEntries().individualAdjustableEntityScales.getOrDefault(StackRender.getEggTypeString(eggType), baseScale);
+
+        return Math.min(accessedScreen.otei$getScreenX() * customScale, accessedScreen.otei$getScreenHeight() * customScale) / 16;
+    }
+
+    private static EmiStack createEntityEmiStackOrPlaceholder(EntityType<?> eggType)
+    {
+        ClientWorld clientWorld = MinecraftClient.getInstance().world;
+        Entity entityInstance = eggType.create(clientWorld);
+        EmiStack stack = createEntityEmiStack(entityInstance);
+
+        if (entityInstance != null) entityInstance.discard();
+
+        return stack;
+    }
+
+    private static void renderEntityStack(EmiStack entityStack, IScreenAccessor accessedScreen, boolean inEmi)
+    {
+        if (inEmi)
         {
-            ClientWorld clientWorld = MinecraftClient.getInstance().world;
-            Entity eggEntity = eggType.create(clientWorld);
-
-            entityStack = createEntityEmiStack(eggEntity);
-
-            if(eggEntity != null) eggEntity.discard();
+            EmiDrawContext drawTooltipContext = EmiDrawContext.wrap(accessedScreen.otei$getContext());
+            EmiRenderHelper.drawTooltip((Screen) accessedScreen, drawTooltipContext, entityStack.getTooltip(), accessedScreen.otei$getMouseX(), accessedScreen.otei$getMouseY());
         }
 
-        if(inEmi)
-        {
-            EmiDrawContext drawTooltipContext = EmiDrawContext.wrap(((IScreenAccessor)screen).otei$getContext());
-
-            // Drawing an Entity breaks EMis tooltip rendering for spawn eggs, re-render it
-            EmiRenderHelper.drawTooltip(screen, drawTooltipContext, entityStack.getTooltip(), ((IScreenAccessor)screen).otei$getMouseX(), ((IScreenAccessor)screen).otei$getMouseY());
-        }
-
-        entityStack.render(((IScreenAccessor)screen).otei$getContext(), 0, 0, 0);
-
-        ((IScreenAccessor)screen).otei$getContext().getMatrices().pop();
+        entityStack.render(accessedScreen.otei$getContext(), 0, 0, 0);
     }
 
     private static EntityType<?> handleCompat(Item egg)
     {
-        if(BumblezoneCompat.isSentryWatcherSpawnEgg(egg)) return BumblezoneCompat.handleSentryWatcherSpawnEgg(egg);
+        if (BumblezoneCompat.isSentryWatcherSpawnEgg(egg)) return BumblezoneCompat.handleSentryWatcherSpawnEgg(egg);
 
-        return ((SpawnEggItem)egg).getEntityType(egg.getDefaultStack().getNbt());
+        return ((SpawnEggItem) egg).getEntityType(egg.getDefaultStack().getNbt());
     }
 
     public static EmiIngredient getIconGroupEmiWidgetSlotStack(Screen screen)
@@ -158,11 +213,19 @@ public class EMILootCompat
 
         return hoveredStack instanceof EntityEmiStack;
     }
+
     public static boolean isIconGroupEmiWidget(Widget hoveredWidget)
     {
         if(!OTEIClient.getCompatChecker().hasEMILoot()) return false;
 
         return hoveredWidget instanceof IconGroupEmiWidget;
+    }
+
+    public static boolean isQuantityListEmiIngredient(EmiIngredient hoveredStack)
+    {
+        if(!OTEIClient.getCompatChecker().hasEMILoot()) return false;
+
+        return hoveredStack instanceof QuantityListEmiIngredient;
     }
 
     public static EntityEmiStack createEntityEmiStack(Entity ent) { return EntityEmiStack.of(ent); }

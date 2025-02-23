@@ -36,7 +36,7 @@ import de.siphalor.bigitemsduh.compat.emi.plugin.EMILootCompat;
 import de.siphalor.bigitemsduh.compat.emi.plugin.EMITradesCompat;
 import de.siphalor.bigitemsduh.compat.emi.plugin.EMIffectCompat;
 import de.siphalor.bigitemsduh.config.OTEIConfig;
-import de.siphalor.bigitemsduh.util.EnlargedObjectDrawer;
+import de.siphalor.bigitemsduh.util.StackRender;
 import de.siphalor.bigitemsduh.util.IScreenAccessor;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.runtime.EmiDrawContext;
@@ -74,17 +74,19 @@ public abstract class MixinRecipeScreen extends Screen implements IScreenAccesso
     @Inject(method = "render", at = @At("RETURN"))
     public void otei$onRendered(DrawContext drawContext, int mouseX, int mouseY, float delta, CallbackInfo ci)
     {
-        if(!OTEIClient.shouldItemRender() || OTEIConfig.getEmiDependent().disableRecipeScreenMixin) return;
+        if(!OTEIClient.shouldItemRender()) return;
 
         this.otei$context = drawContext;
 
+        RecipeScreen accessibleScreen = ((RecipeScreen)(Object)this);
+
         this.otei$mouseX = mouseX;
         this.otei$mouseY = mouseY;
-        this.otei$x = ((IRecipeScreenAccessor)this).otei$getX();
+        this.otei$x = ((IRecipeScreenAccessor)accessibleScreen).otei$getX();
         this.otei$height = this.height;
 
         EmiDrawContext context = EmiDrawContext.wrap(drawContext);
-        EmiIngredient recipeScreenStack = ((IRecipeScreenInvoker)this).otei$invokeGetHoveredStack();
+        EmiIngredient recipeScreenStack = ((IRecipeScreenInvoker)accessibleScreen).otei$invokeGetHoveredStack();
         EmiIngredient emiHoveredStack = EmiScreenManager.getHoveredStack(this.otei$mouseX, this.otei$mouseY, true).getStack();
 
         if(!emiHoveredStack.isEmpty())
@@ -93,7 +95,7 @@ public abstract class MixinRecipeScreen extends Screen implements IScreenAccesso
             return;
         }
 
-        if(EMILootCompat.isIconGroupEmiWidget(((IRecipeScreenAccessor)this).otei$getHoveredWidget())) { recipeScreenStack = EMILootCompat.getIconGroupEmiWidgetSlotStack((RecipeScreen)(Object)this); }
+        if(EMILootCompat.isIconGroupEmiWidget(((IRecipeScreenAccessor)this).otei$getHoveredWidget())) { recipeScreenStack = EMILootCompat.getIconGroupEmiWidgetSlotStack(accessibleScreen); }
 
         if(recipeScreenStack.isEmpty()) return;
 
@@ -103,7 +105,9 @@ public abstract class MixinRecipeScreen extends Screen implements IScreenAccesso
     @Unique
     private void otei$handleRecipeScreenRendering(EmiIngredient stack, EmiDrawContext context, boolean isEMIPanelStackInRecipeScreen)
     {
-        float size = Math.min(((IRecipeScreenAccessor)this).otei$getX() * OTEIConfig.getConfigEntries().itemScale, this.height * OTEIConfig.getConfigEntries().itemScale);
+        RecipeScreen accessibleScreen = ((RecipeScreen)(Object)this);
+
+        float size = Math.min(((IRecipeScreenAccessor)accessibleScreen).otei$getX() * OTEIConfig.getConfigEntries().itemScale, this.height * OTEIConfig.getConfigEntries().itemScale);
         this.otei$scale = size / 16;
 
         this.otei$itemX = (this.otei$x - size) / 2F;
@@ -111,17 +115,17 @@ public abstract class MixinRecipeScreen extends Screen implements IScreenAccesso
 
         this.otei$stack = EMICompat.getItemStackFromEMIIngredient(stack);
 
-        if((OTEIConfig.getEmiDependent().shouldDrawEntitiesModel && (EnlargedObjectDrawer.isSpawnEgg(EMICompat.getItemStackFromEMIIngredient(stack).getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(EMICompat.getItemStackFromEMIIngredient(stack).getItem()))) || EMILootCompat.isEntity(stack) || EMITradesCompat.isEMITradesEntityStack(stack))
+        if((OTEIConfig.getEmiDependentEntries().shouldDrawEntitiesModel && (StackRender.isSpawnEgg(EMICompat.getItemStackFromEMIIngredient(stack).getItem()) || BumblezoneCompat.isSentryWatcherSpawnEgg(EMICompat.getItemStackFromEMIIngredient(stack).getItem()))) || EMILootCompat.isEntity(stack) || EMITradesCompat.isEMITradesEntityStack(stack))
         {
-            EMILootCompat.drawEmiIngredientAsEntity((RecipeScreen)(Object)this, true, isEMIPanelStackInRecipeScreen, true);
+            EMILootCompat.drawEmiIngredientAsEntity(accessibleScreen, true, isEMIPanelStackInRecipeScreen, true);
             return;
         }
 
-        boolean drawEffectSprite = EMIffectCompat.isStatusEffect(stack) && OTEIConfig.getEmiDependent().shouldDrawEffectSprite;
+        boolean drawEffectSprite = EMIffectCompat.isStatusEffect(stack) && OTEIConfig.getEmiDependentEntries().shouldDrawEffectSprite;
 
         context.push();
 
-        context.matrices().translate(this.otei$itemX + (EnlargedObjectDrawer.getXTranspose(isEMIPanelStackInRecipeScreen, true)), this.otei$itemY + (EnlargedObjectDrawer.getYTranspose(isEMIPanelStackInRecipeScreen, true)), drawEffectSprite ? 100 : -10);
+        context.matrices().translate(this.otei$itemX + (StackRender.getXTranspose(isEMIPanelStackInRecipeScreen, true)), this.otei$itemY + (StackRender.getYTranspose(isEMIPanelStackInRecipeScreen, true)), drawEffectSprite ? 100 : -10);
         context.matrices().scale(this.otei$scale, this.otei$scale, Math.min(this.otei$scale, 20f));
 
         EMICompat.drawEmiIngredient(context, stack, drawEffectSprite, OTEIConfig.getConfigEntries().shouldDrawBarsOnItems);

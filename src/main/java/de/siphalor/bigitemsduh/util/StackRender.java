@@ -37,24 +37,26 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.SpawnEggItem;
 
-public class EnlargedObjectDrawer
+public class StackRender
 {
-    public static void drawObject(Screen screen)
+    public static void drawStack(Screen screen)
     {
-        if(((IScreenAccessor)screen).otei$getContext() == null || ((IScreenAccessor)screen).otei$getStack() == null) return;
+        IScreenAccessor accessedScreen = ((IScreenAccessor)screen);
+        
+        if(accessedScreen.otei$getContext() == null || accessedScreen.otei$getStack() == null) return;
 
-        ItemStack stack = (REICompat.isEntryFocused() && !REICompat.isFocusedEntryFluidStack()) ? REICompat.getFocusedEntryAsItemStack() : ((IScreenAccessor)screen).otei$getStack();
+        ItemStack stack = (REICompat.isEntryFocused() && !REICompat.isFocusedEntryNonItem()) ? REICompat.getFocusedEntryAsItemStack() : accessedScreen.otei$getStack();
 
-        MatrixStack matrices = ((IScreenAccessor)screen).otei$getContext().getMatrices();
+        MatrixStack matrices = accessedScreen.otei$getContext().getMatrices();
         matrices.push();
 
-        matrices.translate(((IScreenAccessor)screen).otei$getItemX() + getXTranspose(false, false), ((IScreenAccessor)screen).otei$getItemY() + getYTranspose(false, false), REICompat.isFocusedEntryFluidStack() ? 100 : -10);
-        matrices.scale(((IScreenAccessor)screen).otei$getScale(), ((IScreenAccessor)screen).otei$getScale(), Math.min(((IScreenAccessor)screen).otei$getScale(), 20f));
+        matrices.translate(accessedScreen.otei$getItemX() + getXTranspose(false, false), accessedScreen.otei$getItemY() + getYTranspose(false, false), REICompat.isFocusedEntryNonItem() ? 100 : -10);
+        matrices.scale(accessedScreen.otei$getScale(), accessedScreen.otei$getScale(), Math.min(accessedScreen.otei$getScale(), 20f));
 
-        REICompat.drawFluidStackIfHovered(((IScreenAccessor)screen).otei$getContext());
+        REICompat.renderFocusedFluidStackEntry(accessedScreen.otei$getContext());
 
-        if(OTEIConfig.getConfigEntries().shouldDrawBarsOnItems) ((IHandledScreenInvoker) screen).otei$invokeDrawItem(((IScreenAccessor)screen).otei$getContext(), stack, 0, 0, "");
-        else ((IScreenAccessor)screen).otei$getContext().drawItem(stack, 0, 0);
+        if(OTEIConfig.getConfigEntries().shouldDrawBarsOnItems) ((IHandledScreenInvoker) screen).otei$invokeDrawItem(accessedScreen.otei$getContext(), stack, 0, 0, "");
+        else accessedScreen.otei$getContext().drawItem(stack, 0, 0);
 
         matrices.pop();
     }
@@ -62,29 +64,29 @@ public class EnlargedObjectDrawer
     public static int getXTranspose(boolean isEMIStackInRecipeScreen, boolean isRecipeScreen)
     {
         if(!isRecipeScreen) return OTEIConfig.getConfigEntries().xTranspose;
-        else if(!isEMIStackInRecipeScreen) return OTEIConfig.getEmiDependent().xTransposeRecipeScreen;
+        else if(!isEMIStackInRecipeScreen) return OTEIConfig.getEmiDependentEntries().xTransposeRecipeScreen;
 
-        return OTEIConfig.getEmiDependent().shouldTransposeEMIPanelItemsToRSTranspose ? OTEIConfig.getEmiDependent().xTransposeRecipeScreen : OTEIConfig.getConfigEntries().xTranspose;
+        return OTEIConfig.getEmiDependentEntries().shouldTransposeEMIPanelItemsToRSTranspose ? OTEIConfig.getEmiDependentEntries().xTransposeRecipeScreen : OTEIConfig.getConfigEntries().xTranspose;
     }
 
     public static int getYTranspose(boolean isEMIStackInRecipeScreen, boolean isRecipeScreen)
     {
         if(!isRecipeScreen) return OTEIConfig.getConfigEntries().yTranspose;
-        else if(!isEMIStackInRecipeScreen) return OTEIConfig.getEmiDependent().yTransposeRecipeScreen;
+        else if(!isEMIStackInRecipeScreen) return OTEIConfig.getEmiDependentEntries().yTransposeRecipeScreen;
 
-        return OTEIConfig.getEmiDependent().shouldTransposeEMIPanelItemsToRSTranspose ? OTEIConfig.getEmiDependent().yTransposeRecipeScreen : OTEIConfig.getConfigEntries().yTranspose;
+        return OTEIConfig.getEmiDependentEntries().shouldTransposeEMIPanelItemsToRSTranspose ? OTEIConfig.getEmiDependentEntries().yTransposeRecipeScreen : OTEIConfig.getConfigEntries().yTranspose;
     }
 
     public static int getYTranspose(boolean isEMIStackInRecipeScreen, boolean isRecipeScreen, EntityType<?> eggType)
     {
-        int eggTypeYTransposeInMapOrDefault = OTEIConfig.getEmiDependent().individualAdjustableEntityYTransposes.getOrDefault(EnlargedObjectDrawer.getEggTypeString(eggType), 0);
+        int eggTypeYTransposeInMapOrDefault = OTEIConfig.getEmiDependentEntries().individualAdjustableEntityYTransposes.getOrDefault(StackRender.getEggTypeString(eggType), 0);
 
         if(!isRecipeScreen) return eggTypeYTransposeInMapOrDefault + OTEIConfig.getConfigEntries().yTranspose;
-        else if(!isEMIStackInRecipeScreen) return eggTypeYTransposeInMapOrDefault + OTEIConfig.getEmiDependent().yTransposeRecipeScreen;
+        else if(!isEMIStackInRecipeScreen) return eggTypeYTransposeInMapOrDefault + OTEIConfig.getEmiDependentEntries().yTransposeRecipeScreen;
 
-        return OTEIConfig.getEmiDependent().shouldTransposeEMIPanelItemsToRSTranspose ? eggTypeYTransposeInMapOrDefault + OTEIConfig.getEmiDependent().yTransposeRecipeScreen : eggTypeYTransposeInMapOrDefault + OTEIConfig.getConfigEntries().yTranspose;
+        return OTEIConfig.getEmiDependentEntries().shouldTransposeEMIPanelItemsToRSTranspose ? eggTypeYTransposeInMapOrDefault + OTEIConfig.getEmiDependentEntries().yTransposeRecipeScreen : eggTypeYTransposeInMapOrDefault + OTEIConfig.getConfigEntries().yTranspose;
     }
 
-    public static boolean isSpawnEgg(Item item) { return item instanceof SpawnEggItem; }
     public static String getEggTypeString(EntityType<?> eggType) { return String.valueOf(eggType).substring(7); }
+    public static boolean isSpawnEgg(Item item) { return item instanceof SpawnEggItem; }
 }

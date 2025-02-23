@@ -24,16 +24,15 @@
 
 package de.siphalor.bigitemsduh.config;
 
-import blue.endless.jankson.Comment;
 import de.siphalor.bigitemsduh.OTEIClient;
-import de.siphalor.bigitemsduh.util.EnlargedObjectDrawer;
+import de.siphalor.bigitemsduh.util.StackRender;
 import de.siphalor.bigitemsduh.util.OTEILogger;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
-import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
+import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.registry.Registries;
 
@@ -69,23 +68,20 @@ public class OTEIConfig implements ConfigData
         @Comment(value = "Sets the y transpose amount for the item displayed in EMIs Recipe Screen. Negative integers will move the item up, whilst positive integers will move it down. Amount is in Pixels")
         public int yTransposeRecipeScreen = 0;
 
-        @Comment(value = "Disabling this will cause the item to not be enlarged in the Recipe Screen, i.e. where you find the recipes for items")
-        public boolean disableRecipeScreenMixin = false;
-
         @Comment(value = "EMIffect ONLY! Allows OTEI to draw the currently hovered status effects sprite, turning this off will draw the potion item instead")
         public boolean shouldDrawEffectSprite = true;
 
         @Comment(value = "When you look at a recipe and hover over an item in the EMi panels with a recipe screen transpose set, it will transpose the item to what it is. If you would rather it be the default transpose, set this to false")
         public boolean shouldTransposeEMIPanelItemsToRSTranspose = true;
 
-        @Comment(value = "EMILoot ONLY! Allows hovered entities spawn egg to render the model rather than the spawn egg item. NOTE: may cause fps decrease")
+        @Comment(value = "EMILoot ONLY! Allows hovered entities spawn egg to render the model instead of the spawn egg itself. NOTE: may cause fps decrease depending on your setup")
         public boolean shouldDrawEntitiesModel = true;
 
         @Comment(value = "Instead of drawing the first item in a list or a tag, this will instead cycle through the list (or tag) and draw each item")
         public boolean shouldCycleThroughListsAndTags = true;
 
         @ConfigEntry.BoundedDiscrete(min = 1, max = 15)
-        @Comment(value = "Companion to shouldCycleThroughListsAndTags, changes the time in seconds the item will switch. NOTE: this will desync if its a list")
+        @Comment(value = "Companion to shouldCycleThroughListsAndTags, changes the time in seconds the item will switch. NOTE: this will desync if it's a list within a list/tag")
         public int adjustItemSwitchTime = 1;
 
         @Comment(value = "EMILoot ONLY! Helps finding an entity by their type via printing their names to console (when joining a world) for changing individual Y Transpose, or scale")
@@ -97,7 +93,7 @@ public class OTEIConfig implements ConfigData
         @Comment(value = "EMILoot ONLY! Sets the default scale (e.g. how enlarged it will be) for every entity if enabled, relative to the space available on the screen. To change each individual entity you will have to go into the config within the config folder")
         public float defaultEntityScale = 0.30F;
 
-        @Comment(value = "EMILoot Only! Sets the default scale (e.g. how enlarged it will be) for an individual entity if enabled, relative to the space available on the screen. Format is shown below.")
+        @Comment(value = "EMILoot ONLY! Sets the default scale (e.g. how enlarged it will be) for an individual entity if enabled, relative to the space available on the screen. Format is shown below.")
         public Map<String, Float> individualAdjustableEntityScales = new TreeMap<>(Map.ofEntries(
                 Map.entry("antiquebeasts.frost-cyclops", 0.24F),
                 Map.entry("antiquebeasts.cyclops", 0.24F),
@@ -118,7 +114,7 @@ public class OTEIConfig implements ConfigData
                 Map.entry("soulsweapons.draugr_boss", 0.24F)
         ));
 
-        @Comment(value = "EMILoot Only! Sets Y Transpose for an individual entity, NOTE: this is added to the transpose in whatever menu you're in. Format is shown below.")
+        @Comment(value = "EMILoot ONLY! Sets Y Transpose for an individual entity, NOTE: this is added to the transpose in whatever menu you're in. Format is shown below.")
         public Map<String, Integer> individualAdjustableEntityYTransposes = new TreeMap<>(Map.ofEntries(
                 Map.entry("antiquebeasts.mummy", -100),
                 Map.entry("antiquebeasts.servant", -100),
@@ -154,7 +150,7 @@ public class OTEIConfig implements ConfigData
                     Map.entry("soulsweapons.returning_knight", 0.1025F),
                     Map.entry("soulsweapons.draugr_boss", 0.24F)
             ));
-            OTEILogger.logError("individualAdjustableEntityScales has errored, rolling back to default values.");
+            OTEILogger.logError("individualAdjustableEntityScales has had an error, rolling back to default values.");
 
             if(emiDependent.individualAdjustableEntityScales == null || emiDependent.individualAdjustableEntityScales.isEmpty()) throw new ValidationException("individualAdjustableEntityScales could not be corrected!");
         }
@@ -169,17 +165,19 @@ public class OTEIConfig implements ConfigData
                     Map.entry("soulsweapons.moonknight", 35),
                     Map.entry("soulsweapons.returning_knight", 35)
             ));
-            OTEILogger.logError("individualAdjustableEntityYTransposes has errored, rolling back to default values.");
+            OTEILogger.logError("individualAdjustableEntityYTransposes has had an error, rolling back to default values.");
 
             if(emiDependent.individualAdjustableEntityYTransposes == null || emiDependent.individualAdjustableEntityYTransposes.isEmpty()) throw new ValidationException("individualAdjustableEntityYTransposes could not be corrected!");
         }
 
         if(emiDependent.autoPopulateMapsWithEntities)
         {
-            Registries.ENTITY_TYPE.stream().filter(type -> type.getSpawnGroup() != SpawnGroup.MISC).forEachOrdered(type ->
+            Registries.ENTITY_TYPE.stream()
+                    .filter(type -> type.getSpawnGroup() != SpawnGroup.MISC)
+                    .forEachOrdered(type ->
             {
-                emiDependent.individualAdjustableEntityYTransposes.putIfAbsent(EnlargedObjectDrawer.getEggTypeString(type), 0);
-                emiDependent.individualAdjustableEntityScales.putIfAbsent(EnlargedObjectDrawer.getEggTypeString(type), 0.30F);
+                emiDependent.individualAdjustableEntityYTransposes.putIfAbsent(StackRender.getEggTypeString(type), 0);
+                emiDependent.individualAdjustableEntityScales.putIfAbsent(StackRender.getEggTypeString(type), 0.30F);
             });
 
             if(emiDependent.individualAdjustableEntityScales == null || emiDependent.individualAdjustableEntityScales.isEmpty()) OTEILogger.logError("individualAdjustableEntityScales auto-populating has failed!");
@@ -199,7 +197,7 @@ public class OTEIConfig implements ConfigData
         if(yTranspose < -3500 || yTranspose > 3500)
         {
             yTranspose = 0;
-            OTEILogger.logError("yTranspose has errored, rolling back to default value.");
+            OTEILogger.logError("yTranspose has had an error, rolling back to default value.");
 
             if(yTranspose < -3500 || yTranspose > 3500) throw new ValidationException("yTranspose could not be corrected!");
         }
@@ -207,7 +205,7 @@ public class OTEIConfig implements ConfigData
         if(xTranspose < -3500 || xTranspose > 3500)
         {
             xTranspose = 0;
-            OTEILogger.logError("xTranspose has errored, rolling back to default value");
+            OTEILogger.logError("xTranspose has had an error, rolling back to default value");
 
             if(xTranspose < -3500 || xTranspose > 3500) throw new ValidationException("xTranspose could not be corrected!");
         }
@@ -215,7 +213,7 @@ public class OTEIConfig implements ConfigData
         if(emiDependent.yTransposeRecipeScreen < -3500 || emiDependent.yTransposeRecipeScreen > 3500)
         {
             emiDependent.yTransposeRecipeScreen = 0;
-            OTEILogger.logError("yTransposeRecipeScreen has errored, rolling back to default value");
+            OTEILogger.logError("yTransposeRecipeScreen has had an error, rolling back to default value");
 
             if(emiDependent.yTransposeRecipeScreen < -3500 || emiDependent.yTransposeRecipeScreen > 3500) throw new ValidationException("yTransposeRecipeScreen could not be corrected!");
         }
@@ -223,7 +221,7 @@ public class OTEIConfig implements ConfigData
         if(emiDependent.xTransposeRecipeScreen < -3500 || emiDependent.xTransposeRecipeScreen > 3500)
         {
             emiDependent.xTransposeRecipeScreen = 0;
-            OTEILogger.logError("xTransposeRecipeScreen has errored, rolling back to default value");
+            OTEILogger.logError("xTransposeRecipeScreen has had an error, rolling back to default value");
 
             if(emiDependent.xTransposeRecipeScreen < -3500 || emiDependent.xTransposeRecipeScreen > 3500) throw new ValidationException("xTransposeRecipeScreen could not be corrected!");
         }
@@ -231,7 +229,7 @@ public class OTEIConfig implements ConfigData
         if(emiDependent.adjustItemSwitchTime < 1 || emiDependent.adjustItemSwitchTime > 15)
         {
             emiDependent.adjustItemSwitchTime = 1;
-            OTEILogger.logError("adjustItemSwitchTime has errored, rolling back to default value");
+            OTEILogger.logError("adjustItemSwitchTime has had an error, rolling back to default value");
 
             if(emiDependent.adjustItemSwitchTime < 1 || emiDependent.adjustItemSwitchTime > 15) throw new ValidationException("adjustItemSwitchTime could not be corrected!");
         }
@@ -239,7 +237,7 @@ public class OTEIConfig implements ConfigData
         if(itemScale < 0.05 || itemScale > 1)
         {
             itemScale = 0.50F;
-            OTEILogger.logError("itemScale has errored, rolling back to default value");
+            OTEILogger.logError("itemScale has had an error, rolling back to default value");
 
             if(itemScale < 0.05 || itemScale > 1) throw new ValidationException("itemScale could not be corrected!");
         }
@@ -247,7 +245,7 @@ public class OTEIConfig implements ConfigData
         if(emiDependent.defaultEntityScale < 0.05 || emiDependent.defaultEntityScale > 1)
         {
             emiDependent.defaultEntityScale = 0.30F;
-            OTEILogger.logError("defaultEntityScale has errored, rolling back to default value");
+            OTEILogger.logError("defaultEntityScale has had an error, rolling back to default value");
 
             if(emiDependent.defaultEntityScale < 0.05 || emiDependent.defaultEntityScale > 1) throw new ValidationException("defaultEntityScale could not be corrected!");
         }
@@ -255,15 +253,11 @@ public class OTEIConfig implements ConfigData
         OTEILogger.logInfo("config has been successfully loaded!");
     }
 
-    @ConfigEntry.Gui.Excluded
-    private static ConfigHolder<OTEIConfig> config;
-
-    public static OTEIConfig getConfigEntries() { return config.getConfig(); }
-    public static OTEIConfig.EMIDependent getEmiDependent() { return getConfigEntries().emiDependent; }
+    public static OTEIConfig getConfigEntries() { return AutoConfig.getConfigHolder(OTEIConfig.class).getConfig(); }
+    public static OTEIConfig.EMIDependent getEmiDependentEntries() { return getConfigEntries().emiDependent; }
 
     public static void register()
     {
         AutoConfig.register(OTEIConfig.class, JanksonConfigSerializer::new);
-        config = AutoConfig.getConfigHolder(OTEIConfig.class);
     }
 }
